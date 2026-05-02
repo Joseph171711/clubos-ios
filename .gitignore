@@ -60,3 +60,11 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Supabase local CLI state
+supabase/.temp/
