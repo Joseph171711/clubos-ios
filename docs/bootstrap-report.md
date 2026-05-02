@@ -20,6 +20,8 @@ Migration applied through the configured Supabase MCP server:
 
 The migration added `clubs.status`, constrained club status values, created Atletico Dallas, created the active 2026-2027 season, and inserted clearly labeled QA fixtures for backend/RLS readiness.
 
+Founding DOC binding applied live through Supabase MCP on 2026-05-02 using the committed safe bootstrap script logic from [supabase/scripts/bootstrap_founding_doc.sql](../supabase/scripts/bootstrap_founding_doc.sql), with an additional exact UID/email preflight check before binding.
+
 ## Real Club Bootstrap
 
 Club:
@@ -39,31 +41,27 @@ Season:
 
 ## Founding DOC Bootstrap
 
-Status: blocked safely because the project currently has `0` Supabase Auth users.
+Status: completed.
 
-No founding DOC profile was created because there is no authenticated user row to bind to `profiles.user_id`. Manually inserting rows into `auth.users` is intentionally avoided.
+Supabase Auth preflight found exactly one matching existing Auth user:
 
-After the founding Auth user exists, run:
+- Auth user ID: `13c06276-028e-4e50-ab93-641bb94388ae`
+- Email: `joseph171711@outlook.com`
+- Email confirmed at: `2026-05-02T12:34:00.322079+00:00`
 
-1. Open Supabase Dashboard for project `cgcrkwlexwtrvlliavgn`.
-2. Go to Authentication > Users.
-3. Create or invite the founding user for Joseph Paez.
-4. Confirm the user appears in `auth.users` with the intended email.
-5. Open [supabase/scripts/bootstrap_founding_doc.sql](../supabase/scripts/bootstrap_founding_doc.sql).
-6. Replace `FOUNDING_USER_EMAIL` with that exact Auth user email.
-7. Run the script through the Supabase SQL editor or the authenticated Supabase MCP connection.
-8. Verify a `doc` profile exists for `Atletico Dallas`.
+Founding DOC profile:
 
-Expected founding DOC profile:
-
-- Role: `doc`
+- DOC profile ID: `bb496826-c439-499d-ac3b-773c5245ada9`
+- Auth user ID: `13c06276-028e-4e50-ab93-641bb94388ae`
 - Club ID: `56f736e5-5961-4bb4-a7f6-05417df1cdff`
+- Role: `doc`
 - First name: `Joseph`
 - Last name: `Paez`
-- Email: copied from the Auth user row
+- Email: `joseph171711@outlook.com`
 - Active state: `is_active = true`
+- Deleted state: `deleted_at = null`
 
-DOC profile ID: not created yet because no Auth user exists.
+The profile is linked through `profiles.user_id`, so RLS helper functions resolve it through `auth.uid()`.
 
 ## QA Fixtures
 
@@ -88,25 +86,43 @@ Fixture counts verified live:
 
 ## RLS Test Results
 
-Live tests completed:
+Live DOC simulation used `role authenticated` with `auth.uid()` claims set to `13c06276-028e-4e50-ab93-641bb94388ae`.
 
+DOC helper results:
+
+- `private.current_user_profile_id()`: `bb496826-c439-499d-ac3b-773c5245ada9`
+- `private.current_user_club_id()`: `56f736e5-5961-4bb4-a7f6-05417df1cdff`
+- `private.current_user_role()`: `doc`
+- `private.is_doc_or_club_manager()`: `true`
+
+DOC access results:
+
+- Atletico Dallas club records visible: `1`
+- Seasons visible: `1`
+- Teams visible: `1`
+- Players visible: `1`
+- Player inquiries visible: `1`
+- Documents visible: `0` because no document upload rows exist yet
+- Document requirements visible: `1`
+- Profiles visible: `3`
+
+Negative access checks:
+
+- Authenticated no-profile access remains blocked. A synthetic authenticated UID with no matching `profiles.user_id` saw `0` clubs, teams, players, player inquiries, documents, and document requirements.
+- No-profile helper functions returned `null` for current profile, club, and role.
 - Anonymous access remains blocked. `anon` selecting from `public.clubs` returns `permission denied for table clubs`.
-- Authenticated access without a profile is restricted. A synthetic authenticated JWT subject with no matching `profiles.user_id` saw `0` clubs, seasons, teams, players, inquiries, and documents.
-- Helper functions for an authenticated user without a profile returned `null` for current profile, club, and role, which prevents row access.
 - No broad public grants were introduced. `anon` table/view grants: `0`. `PUBLIC` table/view grants: `0`.
 - RLS remains enabled on all public base tables.
 
 Tests not completed yet:
 
-- DOC club-wide access was not tested because no founding Auth user exists yet.
-- Coach and team manager role tests with real login sessions were not completed because no Auth test accounts exist yet.
-- Parent and player role tests were not completed because profile-to-player Auth bindings require real Auth users.
+- Coach and team manager role tests with real login sessions are still pending because those Auth test accounts are not created/bound yet.
+- Parent and player role tests are still pending because profile-to-player Auth bindings require real Auth users.
 
 ## One-Account-Per-Role Test Plan
 
-Before Rork starts UI work, create or invite one Supabase Auth user for each role:
+Before Rork starts UI work, create or invite one Supabase Auth user for each remaining role:
 
-- `doc`
 - `club_manager`
 - `head_coach`
 - `assistant_coach`
@@ -118,7 +134,6 @@ Use the SQL editor or MCP to bind those Auth users to `profiles.user_id`; do not
 
 Recommended setup:
 
-- Bind Joseph's Auth user with [supabase/scripts/bootstrap_founding_doc.sql](../supabase/scripts/bootstrap_founding_doc.sql).
 - Create a `club_manager` profile for Atletico Dallas.
 - Bind the QA head coach profile to the head coach Auth user.
 - Create an unassigned head coach profile to prove unassigned coaches cannot see players or inquiries.
@@ -136,11 +151,11 @@ Expected RLS outcomes:
 
 ## Known Limitations
 
-- Founding DOC profile cannot be completed until the first Auth user exists.
 - QA coach and manager profiles are not login-capable until their `user_id` values are bound to real Auth users.
 - Parent/player tests need real parent/player Auth users plus player profile links.
+- No document upload rows exist yet, so DOC document access is proven through document requirements and grants/RLS, not through actual uploaded document rows.
 - The QA fixtures are live data and should stay clearly labeled or be removed before production onboarding.
 
 ## Exact Next Step Before Rork
 
-Create the founding Supabase Auth user for Joseph Paez, run [supabase/scripts/bootstrap_founding_doc.sql](../supabase/scripts/bootstrap_founding_doc.sql), verify DOC RLS access, then create/bind the remaining six role test accounts and run the one-account-per-role RLS matrix.
+Create and bind the remaining role test accounts, then run the one-account-per-role RLS matrix for `club_manager`, `head_coach`, `assistant_coach`, `team_manager`, `parent`, and `player` before Rork starts building UI flows.
