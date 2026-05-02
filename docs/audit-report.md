@@ -156,6 +156,10 @@ Supabase performance advisor notes:
 - Some role-specific field edits may need additional RPC functions if Rork requires stricter column-level write control than RLS can express cleanly.
 - Final authorization proof should include live test accounts for DOC, Club Manager, Coach, Team Manager, Parent, and Player roles.
 
+## Bootstrap Update
+
+The first real club row and active season were created in migration `20260502105754_bootstrap_atletico_dallas_foundation`. See [bootstrap-report.md](bootstrap-report.md) for the live IDs, QA fixture IDs, and RLS smoke-test results.
+
 ## Next Required Step Before Rork
 
-Create the first real club row and bootstrap a DOC profile for the founding authenticated user, then test the RLS policies with one account per role before Rork starts building UI flows.
+Create the founding Supabase Auth user for Joseph Paez, run [../supabase/scripts/bootstrap_founding_doc.sql](../supabase/scripts/bootstrap_founding_doc.sql), verify DOC RLS access, then test the remaining one-account-per-role RLS matrix before Rork starts building UI flows.
