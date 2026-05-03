@@ -1,6 +1,6 @@
 # ClubOS-Final Backend Audit Report
 
-Audit date: 2026-05-02
+Audit date: 2026-05-03
 
 Target Supabase project: `cgcrkwlexwtrvlliavgn` (`ClubOS-Final`)
 
@@ -17,6 +17,10 @@ Applied live to Supabase project `cgcrkwlexwtrvlliavgn`:
 - `20260502073835_app_readiness_views`
 - `20260502080959_lock_down_app_views`
 - `20260502081510_restrict_helper_function_execution`
+- `20260502105754_bootstrap_atletico_dallas_foundation`
+- `20260503222601_test_literal_noop`
+- `20260503221746_doc_readiness_intelligence_views`
+- `20260503223255_fix_doc_today_deadline_counts`
 
 All migrations completed successfully through the configured Supabase MCP server.
 
@@ -28,6 +32,7 @@ Live verification results:
 
 - Required tables present: 32 of 32.
 - Required app-readiness views present: 6 of 6.
+- DOC intelligence views present: 9 of 9.
 - Missing required tables: none.
 - Missing required views: none.
 - Required foreign keys were created for club, season, team, player, staff/profile, inquiry, document, league, match, and tournament relationships.
@@ -113,6 +118,18 @@ Rork can query lookup tables directly for dropdowns and can use the security-inv
 - `app_team_roster_summary`
 - `app_document_queue`
 
+Rork can query DOC readiness and intelligence views for operational summaries:
+
+- `doc_today_readiness_v`
+- `doc_team_readiness_v`
+- `team_competition_readiness_v`
+- `team_tournament_deadlines_v`
+- `team_document_readiness_v`
+- `player_document_status_v`
+- `staff_compliance_status_v`
+- `pipeline_risk_v`
+- `roster_health_v`
+
 Table and column names are lower_snake_case, descriptive, and suitable for Swift/Rork clients.
 
 Potential future RPCs/views that may make app development smoother:
@@ -148,9 +165,19 @@ Supabase performance advisor notes:
 - Supabase MCP advisors were run after migration application.
 - Local Supabase CLI lint was not used because the local CLI was not authenticated/linked in this workspace; MCP live execution and advisors were used instead.
 
+DOC intelligence validation on 2026-05-03:
+
+- All 9 readiness views exist live and have `security_invoker=true`.
+- DOC user `13c06276-028e-4e50-ab93-641bb94388ae` sees 1 `doc_today_readiness_v` row for Atletico Dallas.
+- `doc_team_readiness_v` returns `QA U12 Boys 9v9` with `roster_count = 1` and `roster_health = critical`.
+- `team_tournament_deadlines_v` returns 4 QA tournament deadline rows.
+- QA readiness seed counts: 1 league, 1 team league, 1 tournament, 1 team tournament, 4 tournament deadlines, and 12 team-scoped document requirements.
+- Authenticated no-profile access returns 0 rows from the readiness views.
+- Anonymous access receives `permission denied` and has no table/view grants.
+
 ## Known Limitations
 
-- Initial club/profile bootstrap is still required before real users can query data under RLS.
+- Founding DOC bootstrap is complete for Joseph Paez; additional role-specific test accounts are still needed for full one-account-per-role RLS testing.
 - Parent/player portal flows require a secure profile-to-player relationship before broad parent/player access is enabled.
 - Supabase Storage metadata tables are ready, but private document bucket policies must be implemented before uploads.
 - Some role-specific field edits may need additional RPC functions if Rork requires stricter column-level write control than RLS can express cleanly.
@@ -160,6 +187,14 @@ Supabase performance advisor notes:
 
 The first real club row and active season were created in migration `20260502105754_bootstrap_atletico_dallas_foundation`. See [bootstrap-report.md](bootstrap-report.md) for the live IDs, QA fixture IDs, and RLS smoke-test results.
 
+## DOC Intelligence Update
+
+Migration `20260503221746_doc_readiness_intelligence_views` added DOC readiness, competition, document compliance, staff compliance, pipeline risk, and roster health views. It also added safe QA competition/compliance data for Atletico Dallas so Rork has non-production readiness rows to render.
+
+Migration `20260503223255_fix_doc_today_deadline_counts` keeps DOC Today roster-upload deadline counts independent from tournament deadline row counts.
+
+Migration `20260503222601_test_literal_noop` is a no-op (`select 1;`) that records a harmless MCP connector verification step so Git migration history remains aligned with live Supabase migration history.
+
 ## Next Required Step Before Rork
 
-Create the founding Supabase Auth user for Joseph Paez, run [../supabase/scripts/bootstrap_founding_doc.sql](../supabase/scripts/bootstrap_founding_doc.sql), verify DOC RLS access, then test the remaining one-account-per-role RLS matrix before Rork starts building UI flows.
+Point Rork's DOC Today and Team Detail surfaces at the readiness views, then create/bind the remaining role test accounts to verify coach, manager, parent, and player row visibility end to end.

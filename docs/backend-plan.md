@@ -88,3 +88,21 @@ Security-invoker views give Rork simple dashboard and list surfaces while preser
 - `app_document_queue`
 
 These views are helpers, not a replacement for normalized tables. Rork can query either the views or the base tables depending on screen complexity.
+
+## DOC Intelligence Views
+
+DOC readiness and compliance views provide the next layer of app-friendly reporting without denormalizing the core schema:
+
+- `doc_today_readiness_v`
+- `doc_team_readiness_v`
+- `team_competition_readiness_v`
+- `team_tournament_deadlines_v`
+- `team_document_readiness_v`
+- `player_document_status_v`
+- `staff_compliance_status_v`
+- `pipeline_risk_v`
+- `roster_health_v`
+
+These views are also `security_invoker` views. DOC and Club Manager users can read club-wide readiness data; coaches and team managers only receive rows for teams and records allowed by existing RLS and helper functions. Anonymous access is not granted.
+
+See [readiness-views.md](readiness-views.md) for the app contract and Rork consumption guidance.
