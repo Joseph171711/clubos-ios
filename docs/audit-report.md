@@ -1,6 +1,6 @@
 # ClubOS-Final Backend Audit Report
 
-Audit date: 2026-05-03
+Audit date: 2026-05-04
 
 Target Supabase project: `cgcrkwlexwtrvlliavgn` (`ClubOS-Final`)
 
@@ -12,15 +12,16 @@ Branch: `main`
 
 Applied live to Supabase project `cgcrkwlexwtrvlliavgn`:
 
-- `20260502073831_init_clubos_foundation`
-- `20260502073833_seed_clubos_lookups`
-- `20260502073835_app_readiness_views`
-- `20260502080959_lock_down_app_views`
-- `20260502081510_restrict_helper_function_execution`
-- `20260502105754_bootstrap_atletico_dallas_foundation`
+- `20260502080431_init_clubos_foundation`
+- `20260502080542_seed_clubos_lookups`
+- `20260502080648_app_readiness_views`
+- `20260502081040_lock_down_app_views`
+- `20260502081544_restrict_helper_function_execution`
+- `20260502110120_bootstrap_atletico_dallas_foundation`
 - `20260503222601_test_literal_noop`
-- `20260503221746_doc_readiness_intelligence_views`
-- `20260503223255_fix_doc_today_deadline_counts`
+- `20260503222949_doc_readiness_intelligence_views`
+- `20260503223349_fix_doc_today_deadline_counts`
+- `20260504025207_harden_rls_auto_enable_function`
 
 All migrations completed successfully through the configured Supabase MCP server.
 
@@ -30,7 +31,8 @@ Status: passed.
 
 Live verification results:
 
-- Required tables present: 32 of 32.
+- Required operational tables present: 25 of 25.
+- Lookup tables present: 7 of 7.
 - Required app-readiness views present: 6 of 6.
 - DOC intelligence views present: 9 of 9.
 - Missing required tables: none.
@@ -65,7 +67,8 @@ Supabase security advisor result after hardening:
 
 - Remaining warning: `Signed-In Users Can Execute SECURITY DEFINER Function`.
 - Reason accepted: authenticated execution is required because RLS policies call private helper functions such as `private.current_user_club_id()` and `private.can_access_player(...)`.
-- Public and anonymous execution was revoked; only `authenticated` and `service_role` retain execute on the seven private RLS helper functions.
+- Public and anonymous execution was revoked; only `authenticated` and `service_role` retain execute on the private RLS helper functions required by policies.
+- The Supabase `ensure_rls` event trigger helper was moved from `public.rls_auto_enable()` to `private.rls_auto_enable()` and app-role execution was revoked in migration `20260504025207_harden_rls_auto_enable_function`.
 
 Policies that should receive live-user testing before production launch:
 
@@ -163,9 +166,9 @@ Supabase performance advisor notes:
 
 - SQL was validated by successful live migration application and live verification queries.
 - Supabase MCP advisors were run after migration application.
-- Local Supabase CLI lint was not used because the local CLI was not authenticated/linked in this workspace; MCP live execution and advisors were used instead.
+- Local Supabase CLI lint was not used because the `supabase` CLI is not installed in this workspace; MCP live execution and verification queries were used instead.
 
-DOC intelligence validation on 2026-05-03:
+DOC intelligence validation on 2026-05-04:
 
 - All 9 readiness views exist live and have `security_invoker=true`.
 - DOC user `13c06276-028e-4e50-ab93-641bb94388ae` sees 1 `doc_today_readiness_v` row for Atletico Dallas.
@@ -185,15 +188,17 @@ DOC intelligence validation on 2026-05-03:
 
 ## Bootstrap Update
 
-The first real club row and active season were created in migration `20260502105754_bootstrap_atletico_dallas_foundation`. See [bootstrap-report.md](bootstrap-report.md) for the live IDs, QA fixture IDs, and RLS smoke-test results.
+The first real club row and active season were created in migration `20260502110120_bootstrap_atletico_dallas_foundation`. See [bootstrap-report.md](bootstrap-report.md) for the live IDs, QA fixture IDs, and RLS smoke-test results.
 
 ## DOC Intelligence Update
 
-Migration `20260503221746_doc_readiness_intelligence_views` added DOC readiness, competition, document compliance, staff compliance, pipeline risk, and roster health views. It also added safe QA competition/compliance data for Atletico Dallas so Rork has non-production readiness rows to render.
+Migration `20260503222949_doc_readiness_intelligence_views` added DOC readiness, competition, document compliance, staff compliance, pipeline risk, and roster health views. It also added safe QA competition/compliance data for Atletico Dallas so Rork has non-production readiness rows to render.
 
-Migration `20260503223255_fix_doc_today_deadline_counts` keeps DOC Today roster-upload deadline counts independent from tournament deadline row counts.
+Migration `20260503223349_fix_doc_today_deadline_counts` keeps DOC Today roster-upload deadline counts independent from tournament deadline row counts.
 
 Migration `20260503222601_test_literal_noop` is a no-op (`select 1;`) that records a harmless MCP connector verification step so Git migration history remains aligned with live Supabase migration history.
+
+Migration `20260504025207_harden_rls_auto_enable_function` keeps the live Supabase RLS event trigger helper in the non-exposed `private` schema and removes app-role execute privileges from that helper.
 
 ## Next Required Step Before Rork
 

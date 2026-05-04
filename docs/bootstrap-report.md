@@ -14,7 +14,7 @@ Branch: `main`
 
 Migration applied through the configured Supabase MCP server:
 
-- `20260502105754_bootstrap_atletico_dallas_foundation`
+- `20260502110120_bootstrap_atletico_dallas_foundation`
 - Live Supabase migration history name: `bootstrap_atletico_dallas_foundation`
 - Live Supabase migration history version: `20260502110120`
 
